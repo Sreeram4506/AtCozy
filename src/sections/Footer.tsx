@@ -120,7 +120,7 @@ export function Footer() {
   return (
     <footer
       ref={sectionRef}
-      className="relative pt-20 pb-12 px-8 lg:px-16 bg-black overflow-hidden"
+      className="relative pt-10 pb-12 px-8 lg:px-16 bg-black overflow-hidden"
     >
       {/* Marquee section */}
       <div

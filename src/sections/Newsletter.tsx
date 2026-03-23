@@ -67,7 +67,7 @@ export function Newsletter() {
     <section
       ref={sectionRef}
       id="contact"
-      className="relative py-[20vh] bg-[#F4F4F2]"
+      className="relative pt-[12vh] pb-[8vh] bg-[#F4F4F2]"
     >
       <div className="max-w-7xl mx-auto px-[6vw]">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
