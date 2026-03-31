@@ -3,6 +3,8 @@ import gsap from 'gsap';
 import { X, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
+import { api } from '../lib/api';
 
 export function CartDrawer() {
   const { items, isOpen, setCartOpen, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCartStore();
@@ -57,14 +59,23 @@ export function CartDrawer() {
     }
 
     try {
-      // In a real app, we'd call api.orders.create({ items, totalPrice: getTotalPrice() }, token);
-      // For now, let's simulate a successful order
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const orderData = {
+        items: items.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        totalPrice: getTotalPrice()
+      };
+
+      await api.orders.create(orderData);
+      
       clearCart();
       setCartOpen(false);
-      alert('Order placed successfully! Thank you for shopping with AtCozy.');
-    } catch (err) {
-      alert('Checkout failed. Please try again.');
+      toast.success('Order placed successfully! Thank you for shopping with AtCozy.');
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      toast.error(err.message || 'Checkout failed. Please try again.');
     }
   };
 

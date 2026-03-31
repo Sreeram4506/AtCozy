@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
+import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 const cityMotionConfig = {
@@ -10,14 +11,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 export function CityMotion() {
   const sectionRef = useRef<HTMLElement>(null);
+  const pinWrapperRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
-  const triggersRef = useRef<ScrollTrigger[]>([]);
 
-  useEffect(() => {
+  useGSAP(() => {
     const section = sectionRef.current;
-    if (!section) return;
+    const wrapper = pinWrapperRef.current;
+    if (!section || !wrapper) return;
 
     // Create scroll timeline
     const scrollTl = gsap.timeline({
@@ -25,22 +27,11 @@ export function CityMotion() {
         trigger: section,
         start: 'top top',
         end: '+=100%',
-        pin: true,
+        pin: wrapper,
         pinSpacing: true,
         scrub: 0.7,
-        onLeaveBack: () => {
-          // Reset all elements when scrolling back to top
-          gsap.set(imageRef.current, { scale: 1, y: 0, opacity: 1 });
-          gsap.set(headlineRef.current, { x: 0, opacity: 1 });
-          gsap.set(ctaRef.current, { y: 0, opacity: 1 });
-        },
       },
     });
-
-    // Store the ScrollTrigger instance
-    if (scrollTl.scrollTrigger) {
-      triggersRef.current.push(scrollTl.scrollTrigger);
-    }
 
     // ENTRANCE (0% - 30%)
     scrollTl.fromTo(
@@ -85,12 +76,7 @@ export function CityMotion() {
       { y: '6vh', opacity: 0, ease: 'power2.in' },
       0.75
     );
-
-    return () => {
-      triggersRef.current.forEach((t) => t.kill());
-      triggersRef.current = [];
-    };
-  }, []);
+  }, { scope: sectionRef });
 
   const scrollToShop = () => {
     const shopSection = document.getElementById('all-products');
@@ -103,62 +89,65 @@ export function CityMotion() {
     <section
       ref={sectionRef}
       id="city-motion"
-      className="relative h-screen w-full overflow-hidden"
+      className="relative min-h-screen w-full overflow-hidden"
     >
-      {/* Background image */}
-      <div
-        ref={imageRef}
-        className="absolute inset-0 z-0"
-        style={{ willChange: 'transform, opacity' }}
-      >
-        <img
-          src={cityMotionConfig.backgroundImage || '/images/city-motion.jpg'}
-          alt="City fashion"
-          className="w-full h-full object-cover"
-          style={{ filter: 'brightness(0.85)' }}
-        />
-        {/* Vignette overlay */}
+      <div ref={pinWrapperRef} className="h-screen w-full relative">
+        {/* Background image */}
         <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)',
-          }}
-        />
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 h-full flex flex-col justify-end pb-[16vh] px-[6vw]">
-        {/* Headline */}
-        <h2
-          ref={headlineRef}
-          className="text-[clamp(44px,6vw,96px)] font-bold text-white leading-[0.92] tracking-tight max-w-[52vw]"
+          ref={imageRef}
+          className="absolute inset-0 z-0"
           style={{ willChange: 'transform, opacity' }}
         >
-          Confidence{' '}
-          <span className="text-[#D4A24F]">moves.</span>
-        </h2>
+          <img
+            src={cityMotionConfig.backgroundImage || '/images/city-motion.jpg'}
+            alt="City fashion"
+            className="w-full h-full object-cover"
+            style={{ filter: 'brightness(0.85)' }}
+          />
+          {/* Vignette overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)',
+            }}
+          />
+        </div>
 
-        {/* CTA */}
-        <button
-          ref={ctaRef}
-          onClick={scrollToShop}
-          className="mt-8 text-white text-lg font-medium group flex items-center gap-2 w-fit"
-          style={{ willChange: 'transform, opacity' }}
-        >
-          <span className="relative">
-            Shop the edit
-            <span className="absolute bottom-0 left-0 w-0 h-px bg-[#D4A24F] group-hover:w-full transition-all duration-300" />
-          </span>
-          <svg
-            className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {/* Content */}
+        <div className="relative z-10 h-full flex flex-col justify-end pb-[16vh] px-[6vw]">
+          {/* Headline */}
+          <h2
+            ref={headlineRef}
+            className="text-[clamp(44px,6vw,96px)] font-bold text-white leading-[0.92] tracking-tight max-w-[52vw]"
+            style={{ willChange: 'transform, opacity' }}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-          </svg>
-        </button>
+            Confidence{' '}
+            <span className="text-[#D4A24F]">moves.</span>
+          </h2>
+
+          {/* CTA */}
+          <button
+            ref={ctaRef}
+            onClick={scrollToShop}
+            className="mt-8 text-white text-lg font-medium group flex items-center gap-2 w-fit"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            <span className="relative">
+              Shop the edit
+              <span className="absolute bottom-0 left-0 w-0 h-px bg-[#D4A24F] group-hover:w-full transition-all duration-300" />
+            </span>
+            <svg
+              className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </button>
+        </div>
       </div>
     </section>
   );
 }
+

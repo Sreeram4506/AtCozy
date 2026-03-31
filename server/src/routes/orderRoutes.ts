@@ -1,27 +1,20 @@
 import express from 'express';
-import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
-import Order from '../models/Order.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
+import {
+  createOrder,
+  getMyOrders,
+  getOrderById,
+  cancelOrder,
+} from '../controllers/orderController.js';
 
 const router = express.Router();
 
-router.post('/', authMiddleware, async (req: AuthRequest, res) => {
-  try {
-    const { items, totalPrice } = req.body;
-    const newOrder = new Order({ userId: req.user?.id, items, totalPrice });
-    await newOrder.save();
-    res.status(201).json(newOrder);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// All order routes require authentication
+router.use(authMiddleware);
 
-router.get('/my-orders', authMiddleware, async (req: AuthRequest, res) => {
-  try {
-    const orders = await Order.find({ userId: req.user?.id }).sort({ createdAt: -1 });
-    res.json(orders);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post('/', createOrder);
+router.get('/my-orders', getMyOrders);
+router.get('/:id', getOrderById);
+router.put('/:id/cancel', cancelOrder);
 
 export default router;

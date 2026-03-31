@@ -1,9 +1,11 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { api } from '../lib/api';
 
 interface User {
   id: string;
   email: string;
   name: string;
+  role: 'user' | 'admin';
 }
 
 interface AuthContextType {
@@ -11,8 +13,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAuthModalOpen: boolean;
   authMode: 'login' | 'signup';
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   openAuthModal: (mode: 'login' | 'signup') => void;
   closeAuthModal: () => void;
@@ -26,36 +28,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
-  const login = useCallback(async (email: string, _password: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    
-    // Mock successful login
-    setUser({
-      id: '1',
-      email,
-      name: email.split('@')[0],
-    });
-    setIsAuthModalOpen(false);
-    return true;
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    if (storedUser && token) {
+      setUser(JSON.parse(storedUser));
+    }
   }, []);
 
-  const signup = useCallback(async (name: string, email: string, _password: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    
-    // Mock successful signup
-    setUser({
-      id: '1',
-      email,
-      name,
-    });
-    setIsAuthModalOpen(false);
-    return true;
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const data = await api.auth.login({ email, password });
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setIsAuthModalOpen(false);
+    } catch (err: any) {
+      throw new Error(err.message || 'Login failed');
+    }
+  }, []);
+
+  const signup = useCallback(async (name: string, email: string, password: string) => {
+    try {
+      const data = await api.auth.register({ name, email, password });
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setIsAuthModalOpen(false);
+    } catch (err: any) {
+      throw new Error(err.message || 'Signup failed');
+    }
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   }, []);
 
   const openAuthModal = useCallback((mode: 'login' | 'signup') => {
@@ -98,3 +106,4 @@ export function useAuth() {
   }
   return context;
 }
+

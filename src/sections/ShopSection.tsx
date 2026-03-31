@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Heart, ShoppingBag } from 'lucide-react';
+import { Heart, ShoppingBag, Loader2 } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useUIStore } from '../store/uiStore';
+import { api } from '../lib/api';
 import { shopConfig } from '../config';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -18,6 +19,23 @@ export function ShopSection() {
   
   const { addToCart, toggleWishlist, isInWishlist } = useCartStore();
   const { openQuickView } = useUIStore();
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const data = await api.products.getFeatured();
+        setProducts(data.length > 0 ? data : shopConfig.products);
+      } catch (err) {
+        console.error('Featured products fetch failed', err);
+        setProducts(shopConfig.products);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFeatured();
+  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -196,7 +214,12 @@ export function ShopSection() {
           className="flex flex-wrap justify-center gap-6 w-full max-w-6xl"
           style={{ perspective: '1000px' }}
         >
-          {shopConfig.products.map((product) => (
+          {isLoading ? (
+             <div className="flex items-center gap-3 text-white/50 py-20">
+               <Loader2 className="w-6 h-6 animate-spin text-[#D4A24F]" />
+               <span className="text-sm uppercase tracking-widest">Loading Premium Collection...</span>
+             </div>
+          ) : products.map((product) => (
             <div
               key={product.id}
               onClick={() => openQuickView(product)}

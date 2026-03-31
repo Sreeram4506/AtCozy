@@ -1,32 +1,116 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import Product from './models/Product';
+import Product from './models/Product.js';
+import User from './models/User.js';
 
 dotenv.config();
 
-const products = [
-  { id: 1, name: "Back Patterned Shirt", price: 258, image: "/images/product-shirt-1.jpg", category: "Tops", description: "Elegant back patterned shirt with intricate European design details.", colors: ["#FFFFFF", "#F5F5DC", "#000000"], sizes: ["S", "M", "L", "XL"] },
-  { id: 2, name: "Batik Patterned Shirred Blouse", price: 60, image: "/images/product-blouse-1.jpg", category: "Tops", description: "Soft shirred blouse featuring a unique batik pattern for a sophisticated look.", colors: ["#E6E6FA", "#40E0D0"], sizes: ["XS", "S", "M", "L"] },
-  { id: 3, name: "Black & Red Plaid Long Dress", price: 150, image: "/images/product-dress.jpg", category: "Dresses", description: "Classic plaid dress in a long silhouette, perfect for evening gatherings.", colors: ["#FF0000", "#000000"], sizes: ["S", "M", "L"] },
-  { id: 101, name: "Beige Suede Ankle Boot", price: 205, image: "/images/collection-01.jpg", category: "Footwear", description: "Handcrafted suede ankle boots with a comfortable chunky sole.", colors: ["#D2B48C", "#8B4513"], sizes: ["36", "37", "38", "39", "40"] },
-  { id: 102, name: "BIZE Brown Knit Blouse", price: 125, image: "/images/collection-02.jpg", category: "Tops", colors: ["#8B4513", "#A52A2A"], sizes: ["S", "M", "L"] },
-  { id: 103, name: "Cold-Shoulder Knit Blouse", price: 125, image: "/images/collection-03.jpg", category: "Tops", colors: ["#800080", "#808080"], sizes: ["S", "M", "L"] },
-  { id: 104, name: "BIZE Plaid Blouse", price: 90, image: "/images/collection-04.jpg", category: "Tops", colors: ["#FF0000", "#000000"], sizes: ["S", "M", "L"] },
-  { id: 105, name: "Red Batwing Blouse", price: 145, image: "/images/collection-05.jpg", category: "Tops", colors: ["#FF0000"], sizes: ["One Size"] },
-];
+// Fetches all products from atcozy.com Shopify JSON API and seeds them
+async function fetchShopifyProducts() {
+  const resp = await fetch('https://atcozy.com/products.json?limit=250');
+  const data = await resp.json();
+  return data.products;
+}
+
+function categorizeProduct(p: any): string {
+  const type = (p.product_type || '').toLowerCase();
+  const title = (p.title || '').toLowerCase();
+  const tags = (p.tags || []).map((t: string) => t.toLowerCase());
+
+  if (type.includes('dress') || title.includes('dress')) return 'Dresses';
+  if (type.includes('shirt') || title.includes('shirt') || title.includes('blouse') || tags.includes('blouse')) return 'Tops';
+  if (type.includes('pants') || title.includes('pants') || title.includes('trousers')) return 'Bottoms';
+  if (type.includes('skirt') || title.includes('skirt')) return 'Bottoms';
+  if (type.includes('jacket') || title.includes('jacket') || title.includes('cape') || title.includes('poncho')) return 'Outerwear';
+  if (type.includes('tunic') || title.includes('tunic')) return 'Tops';
+  if (title.includes('boot') || title.includes('ankle boot')) return 'Boots';
+  if (title.includes('sneaker') || title.includes('high-top')) return 'Sneakers';
+  if (title.includes('pump') || title.includes('heel') || title.includes('slingback')) return 'Heels';
+  if (title.includes('loafer') || title.includes('slip-on') || title.includes('shoe')) return 'Shoes';
+  if (type.includes('top')) return 'Tops';
+  return 'Other';
+}
+
+function stripHtml(html: string): string {
+  return html?.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() || '';
+}
 
 async function seed() {
   try {
     await mongoose.connect(process.env.MONGO_URI as string);
     console.log('Connected to MongoDB');
-    
+
+    console.log('Fetching products from atcozy.com...');
+    const shopifyProducts = await fetchShopifyProducts();
+    console.log(`Fetched ${shopifyProducts.length} products from Shopify`);
+
+    const products = shopifyProducts.map((p: any, index: number) => {
+      const allImages = (p.images || []).map((img: any) => img.src);
+      const placeholderImg = `https://placehold.co/600x600/2a2a2a/gold?text=${encodeURIComponent(p.title.slice(0, 20))}`;
+      const firstImage = p.images?.[0]?.src || placeholderImg;
+      const firstVariant = p.variants?.[0];
+      const price = parseFloat(firstVariant?.price || '0');
+      const compareAt = firstVariant?.compare_at_price ? parseFloat(firstVariant.compare_at_price) : undefined;
+      const colors = p.options?.find((o: any) => o.name?.toLowerCase() === 'color')?.values || [];
+      const sizeOption = p.options?.find((o: any) =>
+        ['size', 'shoe size'].includes(o.name?.toLowerCase())
+      );
+      const sizes = sizeOption?.values || [];
+      const available = p.variants?.some((v: any) => v.available) ?? true;
+      const totalStock = p.variants?.filter((v: any) => v.available).length * 5 || 10;
+
+      return {
+        id: index + 1,
+        shopifyId: p.id,
+        name: p.title,
+        handle: p.handle,
+        price,
+        compareAtPrice: compareAt,
+        image: firstImage,
+        images: allImages,
+        category: categorizeProduct(p),
+        productType: p.product_type || '',
+        vendor: p.vendor || 'AtCozy',
+        description: stripHtml(p.body_html || ''),
+        tags: p.tags || [],
+        colors,
+        sizes,
+        variants: (p.variants || []).map((v: any) => ({
+          title: v.title,
+          price: parseFloat(v.price),
+          available: v.available,
+          sku: v.sku || '',
+        })),
+        stock: totalStock,
+        available,
+        featured: index < 16,
+        source: 'atcozy.com',
+      };
+    });
+
     await Product.deleteMany({});
     await Product.insertMany(products);
-    
-    console.log('Database seeded with initial AtCozy products');
+    console.log(`✅ Seeded ${products.length} products from atcozy.com`);
+
+    // Categories summary
+    const cats: Record<string, number> = {};
+    products.forEach((p: any) => { cats[p.category] = (cats[p.category] || 0) + 1; });
+    console.log('📊 Categories:', cats);
+
+    // Create admin user
+    await User.deleteMany({ email: 'admin@atcozy.com' });
+    const adminUser = new User({
+      name: 'AtCozy Admin',
+      email: 'admin@atcozy.com',
+      password: 'AtCozy2026!',
+      role: 'admin',
+    });
+    await adminUser.save();
+    console.log('👤 Admin user: admin@atcozy.com / AtCozy2026!');
+
     process.exit(0);
   } catch (err) {
-    console.error('Seeding failed', err);
+    console.error('❌ Seeding failed:', err);
     process.exit(1);
   }
 }

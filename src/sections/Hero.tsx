@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { heroConfig } from '../config';
@@ -13,104 +13,100 @@ export function Hero() {
   const ctaRef = useRef<HTMLButtonElement>(null);
   const bottomLeftRef = useRef<HTMLSpanElement>(null);
   const bottomRightRef = useRef<HTMLSpanElement>(null);
-  const [, setLoaded] = useState(false);
-  const triggersRef = useRef<ScrollTrigger[]>([]);
 
   if (!heroConfig.title) return null;
 
   useEffect(() => {
-    // Entry animation on load
-    const tl = gsap.timeline({ delay: 0.2 });
+    const section = sectionRef.current;
+    if (!section) return;
 
-    // Image scale + fade
-    tl.fromTo(
-      imageRef.current,
-      { scale: 1.08, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 1.5, ease: 'power2.out' }
-    );
+    const ctx = gsap.context(() => {
+      // Entry animation on load
+      const tl = gsap.timeline({ delay: 0.2 });
 
-    // Title characters animation
-    if (titleRef.current) {
-      const chars = titleRef.current.querySelectorAll('.char');
+      // Image scale + fade
       tl.fromTo(
-        chars,
-        { y: 40, opacity: 0, rotateX: -45 },
-        {
-          y: 0,
-          opacity: 1,
-          rotateX: 0,
-          duration: 0.8,
-          stagger: 0.08,
-          ease: 'power3.out',
-        },
-        '-=1.2'
+        imageRef.current,
+        { scale: 1.08, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 1.5, ease: 'power2.out' }
       );
-    }
 
-    // Subtitle fade
-    tl.fromTo(
-      subtitleRef.current,
-      { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' },
-      '-=0.4'
-    );
+      // Title characters animation
+      if (titleRef.current) {
+        const chars = titleRef.current.querySelectorAll('.char');
+        tl.fromTo(
+          chars,
+          { y: 40, opacity: 0, rotateX: -45 },
+          {
+            y: 0,
+            opacity: 1,
+            rotateX: 0,
+            duration: 0.8,
+            stagger: 0.08,
+            ease: 'power3.out',
+          },
+          '-=1.2'
+        );
+      }
 
-    // CTA fade
-    tl.fromTo(
-      ctaRef.current,
-      { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' },
-      '-=0.3'
-    );
+      // Subtitle fade
+      tl.fromTo(
+        subtitleRef.current,
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' },
+        '-=0.4'
+      );
 
-    // Bottom text fade
-    tl.fromTo(
-      [bottomLeftRef.current, bottomRightRef.current],
-      { y: 10, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
-      '-=0.2'
-    );
+      // CTA fade
+      tl.fromTo(
+        ctaRef.current,
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, ease: 'power2.out' },
+        '-=0.3'
+      );
 
-    setLoaded(true);
+      // Bottom text fade
+      tl.fromTo(
+        [bottomLeftRef.current, bottomRightRef.current],
+        { y: 10, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
+        '-=0.2'
+      );
 
-    // Scroll effects - EXIT only (entrance handled on load)
-    const trigger1 = ScrollTrigger.create({
-      trigger: sectionRef.current,
-      start: 'top top',
-      end: '50% top',
-      scrub: 1,
-      onUpdate: (self) => {
-        if (imageRef.current) {
-          gsap.set(imageRef.current, {
-            y: `${self.progress * 30}%`,
-            opacity: 1 - self.progress * 0.5,
-          });
-        }
-      },
-    });
-    triggersRef.current.push(trigger1);
+      // Scroll effects - EXIT only
+      ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: '50% top',
+        scrub: 1,
+        onUpdate: (self) => {
+          if (imageRef.current) {
+            gsap.set(imageRef.current, {
+              y: `${self.progress * 30}%`,
+              opacity: 1 - self.progress * 0.5,
+            });
+          }
+        },
+      });
 
-    const trigger2 = ScrollTrigger.create({
-      trigger: sectionRef.current,
-      start: 'top top',
-      end: '40% top',
-      scrub: 1,
-      onUpdate: (self) => {
-        if (titleRef.current) {
-          gsap.set(titleRef.current, {
-            y: -50 * self.progress,
-            opacity: 1 - self.progress * 0.7,
-          });
-        }
-      },
-    });
-    triggersRef.current.push(trigger2);
+      ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: '40% top',
+        scrub: 1,
+        onUpdate: (self) => {
+          if (titleRef.current) {
+            gsap.set(titleRef.current, {
+              y: -50 * self.progress,
+              opacity: 1 - self.progress * 0.7,
+            });
+          }
+        },
+      });
 
-    return () => {
-      tl.kill();
-      triggersRef.current.forEach((t) => t.kill());
-      triggersRef.current = [];
-    };
+    }, section);
+
+    return () => ctx.revert();
   }, []);
 
   const titleChars = heroConfig.title.split('');

@@ -34,8 +34,9 @@ export const navigationConfig: NavigationConfig = {
     { label: "Shop All", href: "#all-products" },
     { label: "Dresses", href: "#all-products" },
     { label: "Tops", href: "#all-products" },
+    { label: "Boots", href: "#all-products" },
+    { label: "Heels", href: "#all-products" },
     { label: "About", href: "#about" },
-    { label: "Contact", href: "#contact" },
   ],
 };
 
@@ -144,6 +145,21 @@ export const servicesConfig: ServicesConfig = {
 };
 
 // ============================================================================
+// Portrait Study Section Configuration
+// ============================================================================
+
+export interface PortraitStudyConfig {
+  backgroundImage: string;
+  ctaText: string;
+}
+
+export const portraitStudyConfig: PortraitStudyConfig = {
+  backgroundImage: '/images/portrait-study.jpg',
+  ctaText: 'View the collection',
+};
+
+
+// ============================================================================
 // Day to Night Section Configuration
 // ============================================================================
 
@@ -184,7 +200,7 @@ export interface ShopConfig {
 }
 
 export const shopConfig: ShopConfig = {
-  title: "Featured Boutique",
+  title: "New Arrivals",
   ctaText: "View all collections",
   backgroundImage: "/images/shop-drop-bg.jpg",
   products: [
@@ -192,29 +208,29 @@ export const shopConfig: ShopConfig = {
       id: 1, 
       name: "Back Patterned Shirt", 
       price: 258, 
-      image: "/images/product-shirt-1.jpg", 
-      category: "Tops",
-      description: "Elegant back patterned shirt with intricate European design details.",
-      colors: ["#FFFFFF", "#F5F5DC", "#000000"],
-      sizes: ["S", "M", "L", "XL"]
+      image: "https://atcozy.com/cdn/shop/files/photo_5442726121528037074_w_789fef2e-097c-4308-8cc7-3990fadc18ed.jpg?v=1769041929&width=360", 
+      category: "Shirts",
+      description: "Enhance your wardrobe with the Back Patterned Shirt by ATCOZY. This elegant shirt is designed for both style and comfort.",
+      colors: ["#FFFFFF", "#000000"],
+      sizes: ["S", "M", "L"]
     },
     { 
       id: 2, 
-      name: "Batik Patterned Shirred Blouse", 
+      name: "Batik Patterned Blouse", 
       price: 60, 
-      image: "/images/product-blouse-1.jpg", 
-      category: "Tops",
-      description: "Soft shirred blouse featuring a unique batik pattern for a sophisticated look.",
+      image: "https://atcozy.com/cdn/shop/files/photo_5442726121528037075_w.jpg?v=1769042217&width=360", 
+      category: "Blouse",
+      description: "A stylish Batik Patterned Shirred Blouse, perfect for casual or semi-formal wear.",
       colors: ["#E6E6FA", "#40E0D0"],
-      sizes: ["XS", "S", "M", "L"]
+      sizes: ["S", "M", "L"]
     },
     { 
-      id: 3, 
-      name: "Black & Red Plaid Long Dress", 
+      id: 8, 
+      name: "Black & Red Plaid Dress", 
       price: 150, 
-      image: "/images/product-dress.jpg", 
-      category: "Dresses",
-      description: "Classic plaid dress in a long silhouette, perfect for evening gatherings.",
+      image: "https://atcozy.com/cdn/shop/files/photo_5442726121528037026_w.jpg?v=1769036817&width=360", 
+      category: "Dress",
+      description: "Elegant long shirt dress in black and red plaid.",
       colors: ["#FF0000", "#000000"],
       sizes: ["S", "M", "L"]
     },
@@ -262,14 +278,14 @@ export interface CollectionConfig {
 }
 
 export const collectionConfig: CollectionConfig = {
-  title: "The Autumn Boutique",
+  title: "The Signature Boutique",
   items: [
-    { id: 101, name: "Beige Suede Ankle Boot", price: 205, image: "/images/collection-01.jpg", category: "Footwear" },
-    { id: 102, name: "BIZE Brown Knit Blouse", price: 125, image: "/images/collection-02.jpg", category: "Tops" },
-    { id: 103, name: "Cold-Shoulder Knit Blouse", price: 125, image: "/images/collection-03.jpg", category: "Tops" },
-    { id: 104, name: "BIZE Plaid Blouse", price: 90, image: "/images/collection-04.jpg", category: "Tops" },
-    { id: 105, name: "Red Batwing Blouse", price: 145, image: "/images/collection-05.jpg", category: "Tops" },
-    { id: 106, name: "Silk Evening Scarf", price: 65, image: "/images/collection-06.jpg", category: "Accessories" },
+    { id: 10, name: "Black Leather Ankle Boot", price: 165, image: "https://atcozy.com/cdn/shop/files/FullSizeRender_d9f51f86-d496-426b-8637-eb0faa894fad.jpg?v=1769624448&width=360", category: "Boots" },
+    { id: 11, name: "Gold Hardware Ankle Boot", price: 175, image: "https://atcozy.com/cdn/shop/files/photo_5451805630852174035_w.jpg?v=1769274294&width=360", category: "Boots" },
+    { id: 18, name: "Patent Block Heel Pump", price: 145, image: "https://atcozy.com/cdn/shop/files/photo_5447568967737215948_w_1.jpg?v=1769118514&width=360", category: "Heels" },
+    { id: 19, name: "Sock-Style Ankle Boot", price: 165, image: "https://atcozy.com/cdn/shop/files/photo_5447568967737215991_w.jpg?v=1769124232&width=360", category: "Boots" },
+    { id: 4, name: "Brown Knit Blouse", price: 145, image: "https://atcozy.com/cdn/shop/files/photo_5447568967737215971_w.jpg?v=1769120679&width=360", category: "Blouse" },
+    { id: 9, name: "Mid-Top Sneakers", price: 185, image: "https://atcozy.com/cdn/shop/files/photo_5440474321714351054_w.jpg?v=1768958492&width=360", category: "Sneakers" },
   ],
 };
 
@@ -482,49 +498,5 @@ export const footerConfig: FooterConfig = {
 };
 
 // ============================================================================
-// Cart Configuration
+// End of Configuration
 // ============================================================================
-
-export interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  size?: string;
-}
-
-// ============================================================================
-// User Configuration
-// ============================================================================
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  wishlist: number[];
-}
-
-// ============================================================================
-// Cart Configuration
-// ============================================================================
-
-export interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  size?: string;
-}
-
-// ============================================================================
-// User Configuration
-// ============================================================================
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  wishlist: number[];
-}

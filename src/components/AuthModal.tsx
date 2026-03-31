@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +17,7 @@ export function AuthModal() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  useGSAP(() => {
     if (isAuthModalOpen) {
       document.body.style.overflow = 'hidden';
       
@@ -46,7 +47,8 @@ export function AuthModal() {
         ease: 'power2.in',
       });
     }
-  }, [isAuthModalOpen]);
+  }, { dependencies: [isAuthModalOpen] });
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,18 +56,13 @@ export function AuthModal() {
     setIsLoading(true);
 
     try {
-      let success;
       if (authMode === 'login') {
-        success = await login(email, password);
+        await login(email, password);
       } else {
-        success = await signup(name, email, password);
+        await signup(name, email, password);
       }
-
-      if (!success) {
-        setError('Authentication failed. Please try again.');
-      }
-    } catch {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

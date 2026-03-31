@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Menu, X, ShoppingBag, Search, User, Heart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { navigationConfig } from '../config';
 import { useCartStore } from '../store/cartStore';
 import { useUIStore } from '../store/uiStore';
@@ -22,17 +23,17 @@ export function Navigation() {
   if (!navigationConfig.logo) return null;
 
   useEffect(() => {
-    const trigger = ScrollTrigger.create({
-      start: '100px top',
-      end: 'max',
-      onUpdate: (self) => {
-        setIsScrolled(self.progress > 0);
-      },
-    });
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        start: '100px top',
+        end: 'max',
+        onUpdate: (self) => {
+          setIsScrolled(self.progress > 0);
+        },
+      });
+    }, navRef);
 
-    return () => {
-      trigger.kill();
-    };
+    return () => ctx.revert();
   }, []);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, label?: string) => {
@@ -73,13 +74,17 @@ export function Navigation() {
       >
         <div className="max-w-7xl mx-auto px-8 lg:px-16 flex items-center justify-between">
           {/* Logo */}
-          <a
-            href="#hero"
-            onClick={(e) => handleNavClick(e, '#hero')}
+          <Link
+            to="/"
+            onClick={(e) => {
+              if (window.location.pathname === '/') {
+                handleNavClick(e as any, '#hero');
+              }
+            }}
             className="text-xl font-medium text-white hover:text-[#D4A24F] transition-colors duration-300"
           >
             {navigationConfig.logo}
-          </a>
+          </Link>
 
           {/* Desktop nav */}
           <div className="hidden lg:flex items-center gap-10">
@@ -98,6 +103,16 @@ export function Navigation() {
 
           {/* Desktop actions */}
           <div className="hidden lg:flex items-center gap-4">
+            {/* Admin Dashboard Link */}
+            {isAuthenticated && user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className="text-xs font-bold uppercase tracking-widest px-4 py-2 border border-[#D4A24F]/50 text-[#D4A24F] rounded-full hover:bg-[#D4A24F] hover:text-black transition-all"
+              >
+                Dashboard
+              </Link>
+            )}
+
             {/* Search */}
             <button 
               onClick={openSearch}
@@ -105,6 +120,9 @@ export function Navigation() {
             >
               <Search className="w-5 h-5" />
             </button>
+
+            {/* Wishlist */}
+            {/* ... */}
 
             {/* Wishlist */}
             <button 

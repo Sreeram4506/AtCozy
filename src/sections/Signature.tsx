@@ -1,42 +1,34 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
 import { signatureConfig } from '../config';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export function Signature() {
   const sectionRef = useRef<HTMLElement>(null);
+  const pinWrapperRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const bottomLeftRef = useRef<HTMLSpanElement>(null);
   const bottomRightRef = useRef<HTMLSpanElement>(null);
-  const triggersRef = useRef<ScrollTrigger[]>([]);
 
-  useEffect(() => {
+  useGSAP(() => {
     const section = sectionRef.current;
-    if (!section) return;
+    const wrapper = pinWrapperRef.current;
+    if (!section || !wrapper) return;
 
     const scrollTl = gsap.timeline({
       scrollTrigger: {
         trigger: section,
         start: 'top top',
         end: '+=100%',
-        pin: true,
+        pin: wrapper,
         pinSpacing: true,
         scrub: 0.6,
-        onLeaveBack: () => {
-          gsap.set(headlineRef.current, { scale: 1, opacity: 1 });
-          gsap.set(subtitleRef.current, { y: 0, opacity: 1 });
-          gsap.set(bottomLeftRef.current, { opacity: 1 });
-          gsap.set(bottomRightRef.current, { opacity: 1 });
-        },
       },
     });
-
-    if (scrollTl.scrollTrigger) {
-      triggersRef.current.push(scrollTl.scrollTrigger);
-    }
 
     // ENTRANCE (0% - 30%)
     scrollTl.fromTo(
@@ -81,54 +73,52 @@ export function Signature() {
       { opacity: 0, ease: 'power2.in' },
       0.9
     );
-
-    return () => {
-      triggersRef.current.forEach((t) => t.kill());
-      triggersRef.current = [];
-    };
-  }, []);
+  }, { scope: sectionRef });
 
   return (
     <section
       ref={sectionRef}
       id="signature"
-      className="relative h-screen w-full overflow-hidden bg-[#0B0B0D] flex items-center justify-center"
+      className="relative min-h-screen w-full overflow-hidden bg-[#0B0B0D]"
     >
-      {/* Content */}
-      <div className="text-center">
-        <h2
-          ref={headlineRef}
-          className="text-[clamp(80px,15vw,200px)] font-bold text-white tracking-tighter leading-none"
-          style={{ willChange: 'transform, opacity' }}
+      <div ref={pinWrapperRef} className="h-screen w-full flex items-center justify-center relative">
+        {/* Content */}
+        <div className="text-center">
+          <h2
+            ref={headlineRef}
+            className="text-[clamp(80px,15vw,200px)] font-bold text-white tracking-tighter leading-none"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            {signatureConfig.title}
+          </h2>
+          <p
+            ref={subtitleRef}
+            className="mt-6 text-white/50 text-lg tracking-wide"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            {signatureConfig.subtitle}
+          </p>
+        </div>
+
+        {/* Bottom left */}
+        <span
+          ref={bottomLeftRef}
+          className="absolute left-[6vw] bottom-[6vh] text-white/40 text-sm"
+          style={{ willChange: 'opacity' }}
         >
-          {signatureConfig.title}
-        </h2>
-        <p
-          ref={subtitleRef}
-          className="mt-6 text-white/50 text-lg tracking-wide"
-          style={{ willChange: 'transform, opacity' }}
+          {signatureConfig.bottomLeft}
+        </span>
+
+        {/* Bottom right */}
+        <span
+          ref={bottomRightRef}
+          className="absolute right-[6vw] bottom-[6vh] text-white/40 text-sm font-medium"
+          style={{ willChange: 'opacity' }}
         >
-          {signatureConfig.subtitle}
-        </p>
+          {signatureConfig.bottomRight}
+        </span>
       </div>
-
-      {/* Bottom left */}
-      <span
-        ref={bottomLeftRef}
-        className="absolute left-[6vw] bottom-[6vh] text-white/40 text-sm"
-        style={{ willChange: 'opacity' }}
-      >
-        {signatureConfig.bottomLeft}
-      </span>
-
-      {/* Bottom right */}
-      <span
-        ref={bottomRightRef}
-        className="absolute right-[6vw] bottom-[6vh] text-white/40 text-sm"
-        style={{ willChange: 'opacity' }}
-      >
-        {signatureConfig.bottomRight}
-      </span>
     </section>
   );
 }
+

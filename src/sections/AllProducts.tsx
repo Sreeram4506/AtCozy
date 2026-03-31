@@ -23,8 +23,10 @@ export function AllProducts() {
     const fetchProducts = async () => {
       try {
         const data = await api.products.getAll();
-        if (Array.isArray(data) && data.length > 0) {
-          setProducts(data.map((p: any) => ({ ...p, source: 'Collection' })));
+        const productsList = data.products || (Array.isArray(data) ? data : []);
+        
+        if (productsList.length > 0) {
+          setProducts(productsList.map((p: any) => ({ ...p, source: 'Collection' })));
         } else {
           // Fallback to config if API fails or is empty
           const fallback = [
@@ -63,41 +65,45 @@ export function AllProducts() {
     const section = sectionRef.current;
     if (!section) return;
 
-    // Title reveal
-    gsap.fromTo(
-      titleRef.current,
-      { y: 50, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 1.2,
-        ease: 'power4.out',
-        scrollTrigger: {
-          trigger: section,
-          start: 'top 80%',
-        }
-      }
-    );
-
-    // Staggered grid reveal
-    const cards = gridRef.current?.children;
-    if (cards) {
+    const ctx = gsap.context(() => {
+      // Title reveal
       gsap.fromTo(
-        Array.from(cards),
-        { y: 30, opacity: 0 },
+        titleRef.current,
+        { y: 50, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 0.8,
-          stagger: 0.05,
-          ease: 'power2.out',
+          duration: 1.2,
+          ease: 'power4.out',
           scrollTrigger: {
-            trigger: gridRef.current,
-            start: 'top 85%',
+            trigger: section,
+            start: 'top 80%',
           }
         }
       );
-    }
+
+      // Staggered grid reveal
+      const cards = gridRef.current?.children;
+      if (cards && cards.length > 0) {
+        gsap.fromTo(
+          Array.from(cards),
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.05,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: gridRef.current,
+              start: 'top 85%',
+            }
+          }
+        );
+      }
+    }, section);
+
+    return () => ctx.revert();
   }, [filter, products]);
 
   const handleAddToCart = (product: any, e: React.MouseEvent) => {
