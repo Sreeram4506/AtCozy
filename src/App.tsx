@@ -139,15 +139,19 @@ function AppContent() {
         }}
       />
 
-      <CustomCursor />
-      <ParticleField />
-      <Navigation />
-      <CartDrawer />
+      {!location.pathname.startsWith('/admin') && (
+        <>
+          <CustomCursor />
+          <ParticleField />
+          <Navigation />
+          <CartDrawer />
+          <QuickViewModal />
+          <SearchOverlay />
+          <WishlistOverlay />
+          <Chatbot />
+        </>
+      )}
       <AuthModal />
-      <QuickViewModal />
-      <SearchOverlay />
-      <WishlistOverlay />
-      <Chatbot />
       <Toaster position="top-center" richColors />
 
       <main>
