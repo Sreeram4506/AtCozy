@@ -80,9 +80,11 @@ function AppContent() {
         snapPoints.push(top / maxScroll);
       });
 
+/* 
       const uniquePoints = Array.from(new Set(snapPoints))
         .filter(p => p >= 0 && p <= 1)
         .sort((a, b) => a - b);
+      */
 
       /* 
       // Disabling global snapping to resolve "auto-scrolling" issues

@@ -5,7 +5,6 @@ import {
   Shield, 
   Bell, 
   Lock, 
-  Eye, 
   Globe, 
   Database, 
   Cpu, 
@@ -19,7 +18,7 @@ import { api } from '../../lib/api';
 import { toast } from 'sonner';
 
 export function AdminSettings() {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',

@@ -3,7 +3,6 @@ import gsap from 'gsap';
 import { X, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useAuth } from '../context/AuthContext';
-import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 export function CartDrawer() {

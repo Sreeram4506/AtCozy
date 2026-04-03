@@ -5,7 +5,7 @@ import { X, Mail, Lock, User, Eye, EyeOff, Github, Chrome } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export function AuthModal() {
-  const { isAuthModalOpen, authMode, closeAuthModal, switchAuthMode, login, signup } = useAuth();
+  const { isAuthModalOpen, authMode, closeAuthModal, switchAuthMode, login, signup, loginSocial } = useAuth();
   const modalRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
