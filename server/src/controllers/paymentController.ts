@@ -2,7 +2,21 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 import { Stripe } from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+let stripeInstance: Stripe | null = null;
+
+/**
+ * Lazy-load Stripe to avoid crashing on startup if key is missing in production.
+ */
+const getStripe = () => {
+  if (!stripeInstance) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY is not defined in environment variables');
+    }
+    stripeInstance = new Stripe(key);
+  }
+  return stripeInstance;
+};
 
 /**
  * POST /api/payments/create-intent
@@ -18,6 +32,7 @@ export const createPaymentIntent = async (req: AuthRequest, res: Response): Prom
 
     // Stripe expects amounts in cents
     const amountInCents = Math.round(amount * 100);
+    const stripe = getStripe();
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
