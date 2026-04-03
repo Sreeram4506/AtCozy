@@ -100,11 +100,11 @@ const authLimiter = rateLimit({
   message: 'Too many authentication attempts, please try again later',
 });
 
-// Better Auth handler - MUST be before express.json() but AFTER cors()
-app.use('/api/auth', toNodeHandler(auth));
-
 // Apply Auth Rate Limiter
 app.use('/api/auth', authLimiter);
+
+// Better Auth handler - MUST be before express.json() but AFTER cors()
+app.all('/api/auth/*', toNodeHandler(auth));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));

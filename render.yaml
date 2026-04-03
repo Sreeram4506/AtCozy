@@ -31,6 +31,7 @@ services:
           type: web
           name: atcozy-api
           property: url
+          suffix: /api/auth
 
   # ---------------------------------------------------------------------------
   # 2. ATCOZY FRONTEND (STATIC SITE)
