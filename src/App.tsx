@@ -8,7 +8,6 @@ import { ParticleField } from './components/ParticleField';
 import { CartDrawer } from './components/CartDrawer';
 import { AuthModal } from './components/AuthModal';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
 import { HomePage } from './pages/HomePage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { AdminLayout } from './pages/admin/AdminLayout';
@@ -26,20 +25,11 @@ import { Chatbot } from './components/Chatbot';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toaster } from 'sonner';
-import { Loader2 } from 'lucide-react';
 import { siteConfig } from './config';
 
-const AdminLoader = () => (
-  <div className="flex flex-col items-center justify-center min-h-screen bg-[#0B0B0D] gap-6">
-    <div className="relative">
-      <Loader2 className="w-12 h-12 animate-spin text-[#D4A24F] opacity-20" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-2 h-2 bg-[#D4A24F] rounded-full animate-pulse" />
-      </div>
-    </div>
-    <p className="text-[#D4A24F]/40 text-[10px] uppercase font-bold tracking-[0.4em] animate-pulse">Initializing Secure Admin Protocol...</p>
-  </div>
-);
+// AdminLoader removed as it was unused
+
+
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, useGSAP);
 

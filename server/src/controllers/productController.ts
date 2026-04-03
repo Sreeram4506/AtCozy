@@ -77,7 +77,8 @@ export const getProducts = async (req: Request, res: Response) => {
 // GET /api/products/:id - Get single product by ID
 export const getProductById = async (req: Request, res: Response) => {
   try {
-    const product = await Product.findOne({ id: parseInt(req.params.id) });
+    const productId = req.params.id as string;
+    const product = await Product.findOne({ id: parseInt(productId) });
     if (!product) return res.status(404).json({ message: 'Product not found' });
     res.json(product);
   } catch (err: any) {

@@ -162,7 +162,7 @@ export function CheckoutPage() {
     await processOrderCreation();
   };
 
-  const handlePaymentSuccess = async (paymentIntentId: string) => {
+  const handlePaymentSuccess = async (_paymentIntentId: string) => {
     await processOrderCreation('paid');
   };
 
@@ -229,6 +229,34 @@ export function CheckoutPage() {
       }
     }
   }), [clientSecret]);
+
+  const generatePDF = async () => {
+    if (!receiptRef.current) return;
+    
+    toast.info("Generating PDF Receipt...");
+    try {
+      // Temporarily expand the element to ensure all content is captured
+      const targetElement = receiptRef.current;
+      
+      const canvas = await html2canvas(targetElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#121215'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`AtCozy-Receipt-${completedOrder.orderId}.pdf`);
+      toast.success("Receipt downloaded successfully!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate PDF");
+    }
+  };
 
   if (!isAuthenticated || (items.length === 0 && !showSuccessModal)) return null;
 

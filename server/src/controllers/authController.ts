@@ -38,11 +38,11 @@ export const register = async (req: Request, res: Response): Promise<any> => {
     const newUser = new User({ email: email.toLowerCase(), name, password });
     await newUser.save();
 
-    const token = generateToken(newUser._id as string, newUser.role);
+    const token = generateToken(newUser._id.toString(), newUser.role);
     res.status(201).json({
       token,
       user: {
-        id: newUser._id,
+        id: newUser._id.toString(),
         email: newUser.email,
         name: newUser.name,
         role: newUser.role,
@@ -72,11 +72,11 @@ export const login = async (req: Request, res: Response): Promise<any> => {
     user.lastLogin = new Date();
     await user.save();
 
-    const token = generateToken(user._id as string, user.role);
+    const token = generateToken(user._id.toString(), user.role);
     res.json({
       token,
       user: {
-        id: user._id,
+        id: user._id.toString(),
         email: user.email,
         name: user.name,
         role: user.role,
