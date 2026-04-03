@@ -64,6 +64,7 @@ export function CollectionGrid() {
       name: item.name,
       price: item.price,
       image: item.image,
+      category: item.category,
     });
   };
 

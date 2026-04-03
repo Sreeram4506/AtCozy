@@ -13,7 +13,6 @@ import {
 import { api } from '../../lib/api';
 import { toast } from 'sonner';
 
-// Product type to match our backend
 interface Product {
   id: number;
   name: string;
@@ -21,6 +20,7 @@ interface Product {
   stock: number;
   category: string;
   source: string;
+  image?: string;
 }
 
 export function AdminProducts() {
@@ -29,6 +29,18 @@ export function AdminProducts() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPreviewImage(URL.createObjectURL(file));
+    } else {
+      setPreviewImage(null);
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -46,19 +58,32 @@ export function AdminProducts() {
     }
   };
 
-  const handleUpdate = async (id: number, updates: Partial<Product>) => {
+  const handleCreate = async (data: FormData) => {
     try {
-      await api.admin.products.update(id, updates);
-      setProducts(products.map(p => p.id === id ? { ...p, ...updates } : p));
+      await api.admin.products.create(data);
+      toast.success('Product created successfully');
+      setIsAdding(false);
+      setPreviewImage(null);
+      // Re-fetch the full list so the dashboard always reflects true DB state
+      await fetchProducts();
+    } catch (err: any) {
+      toast.error(err.message || 'Creation failed');
+    }
+  };
+
+  const handleUpdate = async (id: number, updates: FormData | Partial<Product>) => {
+    try {
+      const updatedProduct = await api.admin.products.update(id, updates);
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedProduct } : p));
       toast.success('Product updated successfully');
-      // Handle category filtering
+      const label = updates instanceof FormData ? updates.get('category')?.toString() : updates.category;
       const knownCategories = ['Dresses', 'Tops', 'Boots', 'Heels', 'Shop All', 'Blouse', 'Sneakers', 'Shirts'];
-      const label = updates.category;
       if (label && knownCategories.includes(label)) {
         const category = label === 'Shop All' ? 'All' : label;
         window.dispatchEvent(new CustomEvent('filterProducts', { detail: category }));
       }
       setIsEditing(null);
+      setPreviewImage(null);
     } catch (err: any) {
       toast.error(err.message || 'Update failed');
     }
@@ -67,9 +92,10 @@ export function AdminProducts() {
   const handleDelete = async (id: number) => {
     try {
       await api.admin.products.delete(id);
-      setProducts(products.filter(p => p.id !== id));
       toast.success('Product removed from inventory');
       setIsDeleting(null);
+      // Re-fetch so count and order are accurate after deletion
+      await fetchProducts();
     } catch (err: any) {
       toast.error(err.message || 'Delete failed');
     }
@@ -100,7 +126,13 @@ export function AdminProducts() {
               <Filter size={18} />
               Filters
            </button>
-           <button className="flex-1 md:flex-initial h-14 px-8 rounded-2xl bg-[#D4A24F] text-black text-sm font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
+           <button 
+             onClick={() => {
+               setIsAdding(true);
+               setPreviewImage(null);
+             }}
+             className="flex-1 md:flex-initial h-14 px-8 rounded-2xl bg-[#D4A24F] text-black text-sm font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+           >
               <Plus size={18} />
               Add Product
            </button>
@@ -184,7 +216,10 @@ export function AdminProducts() {
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-2">
                        <button 
-                         onClick={() => setIsEditing(product)}
+                         onClick={() => {
+                           setIsEditing(product);
+                           setPreviewImage(product.image ? `http://localhost:5000${product.image}` : null);
+                         }}
                          className="p-3 bg-white/5 rounded-xl hover:bg-[#D4A24F] hover:text-black transition-all"
                        >
                           <Edit2 size={16} />
@@ -204,6 +239,66 @@ export function AdminProducts() {
         </div>
       </div>
 
+      {/* Add Product Modal */}
+      {isAdding && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#121215] border border-white/10 rounded-3xl w-full max-w-xl p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+             <div className="flex items-center justify-between mb-8">
+               <h3 className="text-xl font-bold">Add New Product</h3>
+               <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-white/5 rounded-full">
+                 <X size={20} />
+               </button>
+             </div>
+             
+             <form className="space-y-6" encType="multipart/form-data" onSubmit={(e) => {
+               e.preventDefault();
+               const formData = new FormData(e.currentTarget);
+               formData.append('source', 'Manual Ad');
+               handleCreate(formData);
+             }}>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-2">
+                   <label className="text-[10px] uppercase font-bold tracking-widest text-white/40">Product Name</label>
+                   <input name="name" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-[#D4A24F]" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-[10px] uppercase font-bold tracking-widest text-white/40">Category</label>
+                   <input name="category" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-[#D4A24F]" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-[10px] uppercase font-bold tracking-widest text-white/40">Price ($)</label>
+                   <input name="price" type="number" required placeholder="0" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-[#D4A24F]" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-[10px] uppercase font-bold tracking-widest text-white/40">Stock Units</label>
+                   <input name="stock" type="number" required placeholder="0" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-[#D4A24F]" />
+                 </div>
+                 <div className="space-y-2 md:col-span-2">
+                   <label className="text-[10px] uppercase font-bold tracking-widest text-white/40">Product Image</label>
+                   <input onChange={handleImageChange} name="image" type="file" accept="image/*" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-[#D4A24F] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#D4A24F] file:text-black hover:file:bg-[#b58b43]" />
+                 </div>
+                 {previewImage && (
+                   <div className="md:col-span-2 flex justify-center mt-4">
+                     <div className="relative w-48 h-48 rounded-xl overflow-hidden border border-white/10 bg-black/50">
+                       <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
+                     </div>
+                   </div>
+                 )}
+               </div>
+               
+               <div className="pt-6 flex gap-4">
+                 <button type="submit" className="flex-1 py-4 bg-[#D4A24F] text-black font-bold uppercase tracking-widest rounded-xl hover:scale-[1.02] active:scale-95 transition-all">
+                    Create Product
+                 </button>
+                 <button type="button" onClick={() => setIsAdding(false)} className="px-8 py-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all font-bold">
+                    Cancel
+                 </button>
+               </div>
+             </form>
+          </div>
+        </div>
+      )}
+
       {/* Edit Modal */}
       {isEditing && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
@@ -215,15 +310,15 @@ export function AdminProducts() {
                </button>
              </div>
              
-             <form className="space-y-6" onSubmit={(e) => {
+             <form className="space-y-6" encType="multipart/form-data" onSubmit={(e) => {
                e.preventDefault();
                const formData = new FormData(e.currentTarget);
-               handleUpdate(isEditing.id, {
-                 name: formData.get('name') as string,
-                 category: formData.get('category') as string,
-                 price: parseInt(formData.get('price') as string),
-                 stock: parseInt(formData.get('stock') as string),
-               });
+               // If no file is selected, remove the empty 'image' field so we don't overwrite existing image
+               const imageFile = formData.get('image') as File;
+               if (!imageFile || imageFile.size === 0) {
+                 formData.delete('image');
+               }
+               handleUpdate(isEditing.id, formData);
              }}>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-2">
@@ -242,6 +337,17 @@ export function AdminProducts() {
                    <label className="text-[10px] uppercase font-bold tracking-widest text-white/40">Stock Units</label>
                    <input name="stock" type="number" defaultValue={isEditing.stock} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-[#D4A24F]" />
                  </div>
+                 <div className="space-y-2 md:col-span-2">
+                   <label className="text-[10px] uppercase font-bold tracking-widest text-white/40">Update Image (Optional)</label>
+                   <input onChange={handleImageChange} name="image" type="file" accept="image/*" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-[#D4A24F] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#D4A24F] file:text-black hover:file:bg-[#b58b43]" />
+                 </div>
+                 {previewImage && (
+                   <div className="md:col-span-2 flex justify-center mt-4">
+                     <div className="relative w-48 h-48 rounded-xl overflow-hidden border border-white/10 bg-black/50">
+                       <img src={previewImage.startsWith('http') || previewImage.startsWith('blob:') ? previewImage : `http://localhost:5000${previewImage}`} alt="Preview" className="w-full h-full object-cover" />
+                     </div>
+                   </div>
+                 )}
                </div>
                
                <div className="pt-6 flex gap-4">

@@ -1,20 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 
 export interface AuthRequest extends Request {
   user?: { id: string, role: string };
 }
 
-export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
-
+export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string, role: string };
-    req.user = decoded;
+    // Lazy import to ensure DB is connected before auth module loads
+    const { auth } = await import('../lib/auth.js');
+    const sessionContext = await auth.api.getSession({
+      headers: req.headers as any
+    });
+
+    if (!sessionContext?.session) {
+      return res.status(401).json({ message: 'No session, authorization denied' });
+    }
+
+    req.user = { 
+      id: sessionContext.user.id, 
+      role: (sessionContext.user as any).role || 'user' 
+    };
     next();
   } catch (err) {
-    res.status(401).json({ message: 'Token is not valid' });
+    console.error("Auth Middleware Error:", err);
+    res.status(401).json({ message: 'Session is not valid' });
   }
 };
 

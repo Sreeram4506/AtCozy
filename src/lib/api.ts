@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const handleResponse = async (resp: Response) => {
   const data = await resp.json();
@@ -9,8 +9,8 @@ const handleResponse = async (resp: Response) => {
 };
 
 const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem('token');
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
+  // Better Auth uses HTTP-only cookies, no manual token headers needed
+  return {};
 };
 
 export const api = {
@@ -114,6 +114,16 @@ export const api = {
       return handleResponse(resp);
     },
   },
+  payments: {
+    createIntent: async (data: { amount: number; orderId?: string; currency?: string }) => {
+      const resp = await fetch(`${API_URL}/payments/create-intent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(data),
+      });
+      return handleResponse(resp);
+    },
+  },
   admin: {
     getStats: async () => {
       const resp = await fetch(`${API_URL}/admin/stats`, {
@@ -130,18 +140,30 @@ export const api = {
         return handleResponse(resp);
       },
       update: async (id: number, data: any) => {
+        const isFormData = data instanceof FormData;
+        const headers: any = { ...getAuthHeaders() };
+        if (!isFormData) {
+          headers['Content-Type'] = 'application/json';
+        }
+
         const resp = await fetch(`${API_URL}/admin/products/${id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-          body: JSON.stringify(data),
+          headers,
+          body: isFormData ? data : JSON.stringify(data),
         });
         return handleResponse(resp);
       },
       create: async (data: any) => {
+        const isFormData = data instanceof FormData;
+        const headers: any = { ...getAuthHeaders() };
+        if (!isFormData) {
+          headers['Content-Type'] = 'application/json';
+        }
+
         const resp = await fetch(`${API_URL}/admin/products`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-          body: JSON.stringify(data),
+          headers,
+          body: isFormData ? data : JSON.stringify(data),
         });
         return handleResponse(resp);
       },

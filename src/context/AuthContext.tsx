@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { api } from '../lib/api';
+import { createContext, useContext, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import { authClient } from '../lib/auth-client';
 
 interface User {
   id: string;
@@ -13,61 +14,74 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAuthModalOpen: boolean;
   authMode: 'login' | 'signup';
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-  openAuthModal: (mode: 'login' | 'signup') => void;
+  login: (email: string, pass: string) => Promise<any>;
+  signup: (name: string, email: string, pass: string) => Promise<any>;
+  logout: () => Promise<void>;
+  updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
+  loginSocial: (provider: 'google' | 'github') => Promise<void>;
+  openAuthModal: (mode?: 'login' | 'signup') => void;
   closeAuthModal: () => void;
   switchAuthMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  
+  // Use session from Better Auth
+  const { data: session } = authClient.useSession();
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+  const user: User | null = session?.user ? {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.name,
+    role: (session.user as any).role || 'user',
+  } : null;
+
+  const login = async (email: string, pass: string) => {
+    const { data, error } = await authClient.signIn.email({
+      email,
+      password: pass,
+    });
+    if (error) throw error;
+    setIsAuthModalOpen(false);
+    return data;
+  };
+
+  const signup = async (name: string, email: string, pass: string) => {
+    const { error } = await authClient.signUp.email({
+      email,
+      password: pass,
+      name,
+    });
+    
+    if (error) {
+      throw new Error(error.message || 'Signup failed');
     }
-  }, []);
+    
+    setIsAuthModalOpen(false);
+  };
 
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      const data = await api.auth.login({ email, password });
-      setUser(data.user);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setIsAuthModalOpen(false);
-    } catch (err: any) {
-      throw new Error(err.message || 'Login failed');
-    }
-  }, []);
+  const logout = async () => {
+    await authClient.signOut();
+  };
+  
+  const updateProfile = async (data: { name?: string; email?: string }) => {
+    const { error } = await authClient.updateUser(data);
+    if (error) throw error;
+  };
 
-  const signup = useCallback(async (name: string, email: string, password: string) => {
-    try {
-      const data = await api.auth.register({ name, email, password });
-      setUser(data.user);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setIsAuthModalOpen(false);
-    } catch (err: any) {
-      throw new Error(err.message || 'Signup failed');
-    }
-  }, []);
+  const loginSocial = async (provider: 'google' | 'github') => {
+    await authClient.signIn.social({
+      provider,
+      callbackURL: window.location.origin
+    });
+  };
 
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  }, []);
-
-  const openAuthModal = useCallback((mode: 'login' | 'signup') => {
-    setAuthMode(mode);
+  const openAuthModal = useCallback((mode?: 'login' | 'signup') => {
+    if (mode) setAuthMode(mode);
     setIsAuthModalOpen(true);
   }, []);
 
@@ -89,6 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         signup,
         logout,
+        updateProfile,
+        loginSocial,
         openAuthModal,
         closeAuthModal,
         switchAuthMode,

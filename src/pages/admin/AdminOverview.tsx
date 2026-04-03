@@ -12,6 +12,18 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { 
+  ResponsiveContainer, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
 
 export function AdminOverview() {
   const [stats, setStats] = useState<any>(null);
@@ -52,8 +64,11 @@ export function AdminOverview() {
     { label: 'Active Users', value: stats?.totalUsers?.toLocaleString() || '0', change: '-2.4%', icon: Users, trend: 'down' },
     { label: 'Inventory Items', value: stats?.totalProducts?.toLocaleString() || '0', change: '0%', icon: Package, trend: 'stable' },
   ];
+
+  const CHART_COLORS = ['#D4A24F', '#A3813F', '#725E2F', '#413B1F', '#201A0F'];
+
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 pb-20">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
         {statCards.map((stat, i) => (
@@ -81,6 +96,82 @@ export function AdminOverview() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Insights Charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-12">
+        {/* Revenue Trend Chart */}
+        <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 space-y-8 backdrop-blur-xl">
+           <div className="flex items-center justify-between">
+             <h4 className="text-xl font-bold tracking-tight">Revenue Trends</h4>
+             <span className="text-[10px] uppercase font-bold tracking-widest text-white/20">Last 30 Days</span>
+           </div>
+           <div className="h-[300px] w-full">
+             <ResponsiveContainer width="100%" height="100%">
+               <LineChart data={stats?.salesOverTime || []}>
+                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                 <XAxis 
+                   dataKey="_id" 
+                   stroke="rgba(255,255,255,0.2)" 
+                   fontSize={10} 
+                   tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                 />
+                 <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} />
+                 <Tooltip 
+                   contentStyle={{ backgroundColor: '#121215', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                   itemStyle={{ color: '#D4A24F' }}
+                 />
+                 <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#D4A24F" 
+                    strokeWidth={3} 
+                    dot={{ r: 4, fill: '#D4A24F', strokeWidth: 0 }} 
+                    activeDot={{ r: 6, strokeWidth: 0 }} 
+                 />
+               </LineChart>
+             </ResponsiveContainer>
+           </div>
+        </div>
+
+        {/* Category Distribution Chart */}
+        <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 space-y-8 backdrop-blur-xl">
+           <div className="flex items-center justify-between">
+             <h4 className="text-xl font-bold tracking-tight">Category Reach</h4>
+             <span className="text-[10px] uppercase font-bold tracking-widest text-white/20">Inventory Split</span>
+           </div>
+           <div className="h-[300px] w-full flex items-center justify-center">
+             <ResponsiveContainer width="100%" height="100%">
+               <PieChart>
+                 <Pie
+                   data={stats?.categoryDistribution || []}
+                   cx="50%"
+                   cy="50%"
+                   innerRadius={60}
+                   outerRadius={100}
+                   paddingAngle={8}
+                   dataKey="count"
+                   nameKey="_id"
+                 >
+                   {(stats?.categoryDistribution || []).map((_: any, index: number) => (
+                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} stroke="rgba(0,0,0,0.2)" strokeWidth={2} />
+                   ))}
+                 </Pie>
+                 <Tooltip 
+                    contentStyle={{ backgroundColor: '#121215', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                 />
+               </PieChart>
+             </ResponsiveContainer>
+             <div className="flex flex-col gap-3 pr-4">
+                {(stats?.categoryDistribution || []).slice(0, 5).map((cat: any, i: number) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{cat._id}</span>
+                  </div>
+                ))}
+             </div>
+           </div>
+        </div>
       </div>
 
       {/* Charts & Table Section */}

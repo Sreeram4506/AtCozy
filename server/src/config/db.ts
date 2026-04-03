@@ -2,17 +2,28 @@ import mongoose from 'mongoose';
 
 const connectDB = async (): Promise<void> => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI as string, {
-      serverSelectionTimeoutMS: 10000,
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
+      throw new Error('MONGO_URI is not defined in environment variables');
+    }
+
+    const conn = await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 15000, // Slightly longer for cloud cold starts
       socketTimeoutMS: 45000,
+      maxPoolSize: 10,                 // Production pooling
+      retryWrites: true,
+      retryReads: true,
     });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    
+    console.log(`\x1b[32m✔ MongoDB Connected: ${conn.connection.host}\x1b[0m`);
   } catch (error: any) {
-    console.error('CRITICAL: MongoDB connection failed.');
+    console.error('\x1b[31m✘ CRITICAL: MongoDB connection failed.\x1b[0m');
     console.error(`Error: ${error.message}`);
-    console.warn('The common reason is that you\'re trying to access the database from an IP that isn\'t whitelisted.');
-    console.warn('Please whitelist your current IP address in your MongoDB Atlas cluster settings.');
-    // Do not exit process in development to avoid ERR_CONNECTION_REFUSED for the whole API
+    
+    if (process.env.NODE_ENV === 'production') {
+      // In production, we want the process to crash so the orchestrator (Render) restarts it
+      process.exit(1);
+    }
   }
 };
 

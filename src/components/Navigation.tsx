@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Menu, X, ShoppingBag, Search, User, Heart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { navigationConfig } from '../config';
 import { useCartStore } from '../store/cartStore';
 import { useUIStore } from '../store/uiStore';
@@ -17,6 +17,7 @@ export function Navigation() {
   const { getTotalItems, toggleCart, wishlist } = useCartStore();
   const { openSearch, openWishlist } = useUIStore();
   const { isAuthenticated, user, openAuthModal, logout } = useAuth();
+  const navigate = useNavigate();
   const cartCount = getTotalItems();
   const wishlistCount = wishlist.length;
 
@@ -38,27 +39,25 @@ export function Navigation() {
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string, label?: string) => {
     e.preventDefault();
-    const target = (href === '#hero' || href === '#') 
-      ? document.body 
-      : document.querySelector(href);
-      
-    if (target) {
-      // If clicking a category, dispatch filter event
-      if (label === 'Dresses' || label === 'Tops' || label === 'Shop All') {
-        const category = label === 'Shop All' ? 'All' : label;
-        window.dispatchEvent(new CustomEvent('filterProducts', { detail: category }));
-      }
+    setIsMobileMenuOpen(false);
 
-      // Find the start position of the ScrollTrigger for this element if it exists
+    // If it's a category link (not 'About'), navigate to home with category param
+    const categoryItems = ['Shop All', 'Dresses', 'Tops', 'Boots', 'Heels', 'Shirts', 'Blouse', 'Sneakers'];
+    if (label && categoryItems.includes(label)) {
+      const category = label === 'Shop All' ? 'All' : label;
+      navigate(`/?category=${encodeURIComponent(category)}`);
+      return;
+    }
+
+    // For anchor links like #about, scroll to the element
+    const target = (href === '#hero' || href === '#')
+      ? document.body
+      : document.querySelector(href);
+
+    if (target) {
       const st = ScrollTrigger.getAll().find(s => s.trigger === target);
       const scrollPos = st ? st.start : (target === document.body ? 0 : target.getBoundingClientRect().top + window.scrollY);
-
-      gsap.to(window, {
-        scrollTo: scrollPos,
-        duration: 1.5,
-        ease: 'power4.inOut'
-      });
-      setIsMobileMenuOpen(false);
+      gsap.to(window, { scrollTo: scrollPos, duration: 1.5, ease: 'power4.inOut' });
     }
   };
 
@@ -66,7 +65,7 @@ export function Navigation() {
     <>
       <nav
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-[5000] transition-all duration-500 ${
           isScrolled
             ? 'bg-black/80 backdrop-blur-md py-4'
             : 'bg-transparent py-6'
@@ -192,7 +191,7 @@ export function Navigation() {
 
       {/* Mobile menu */}
       <div
-        className={`fixed inset-0 z-40 bg-black transition-all duration-500 lg:hidden ${
+        className={`fixed inset-0 z-[4900] bg-black transition-all duration-500 lg:hidden ${
           isMobileMenuOpen
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none'
@@ -219,7 +218,7 @@ export function Navigation() {
           
           {/* Mobile actions */}
           <div 
-            className="flex items-center gap-6 mt-8"
+            className="flex flex-col items-center gap-8 mt-12 w-full px-8"
             style={{
               transform: isMobileMenuOpen
                 ? 'translateY(0)'
@@ -228,34 +227,84 @@ export function Navigation() {
               transition: `all 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.4s`,
             }}
           >
-            <button 
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                openWishlist();
-              }}
-              className="p-3 text-white/70 hover:text-white transition-colors relative"
-            >
-              <Heart className={`w-6 h-6 ${wishlistCount > 0 ? 'fill-[#D4A24F] text-[#D4A24F]' : ''}`} />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#D4A24F] text-black text-xs font-bold rounded-full flex items-center justify-center">
-                  {wishlistCount}
-                </span>
+            <div className="flex items-center gap-8">
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openWishlist();
+                }}
+                className="p-3 text-white/70 hover:text-white transition-colors relative"
+              >
+                <Heart className={`w-7 h-7 ${wishlistCount > 0 ? 'fill-[#D4A24F] text-[#D4A24F]' : ''}`} />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#D4A24F] text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Mobile Account Action */}
+              {isAuthenticated ? (
+                <button 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    // Optionally navigate to profile or just show sign out below
+                  }}
+                  className="p-3 text-[#D4A24F] transition-colors relative flex flex-col items-center gap-1"
+                >
+                  <User className="w-7 h-7" />
+                </button>
+              ) : (
+                <button 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    openAuthModal('login');
+                  }}
+                  className="p-3 text-white/70 hover:text-white transition-colors relative"
+                >
+                  <User className="w-7 h-7" />
+                </button>
               )}
-            </button>
-            <button 
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                toggleCart();
-              }}
-              className="p-3 text-white/70 hover:text-white transition-colors relative"
-            >
-              <ShoppingBag className="w-6 h-6" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#D4A24F] text-black text-xs font-bold rounded-full flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </button>
+
+              <button 
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  toggleCart();
+                }}
+                className="p-3 text-white/70 hover:text-white transition-colors relative"
+              >
+                <ShoppingBag className="w-7 h-7" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#D4A24F] text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Logout/Admin link for Mobile */}
+            {isAuthenticated && (
+              <div className="flex flex-col items-center gap-4 pt-4 border-t border-white/10 w-full max-w-[200px]">
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-[#D4A24F] text-xs font-bold uppercase tracking-[0.2em]"
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    logout();
+                  }}
+                  className="text-white/40 hover:text-white text-xs uppercase tracking-[0.2em] transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

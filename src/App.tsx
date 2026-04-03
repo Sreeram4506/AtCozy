@@ -8,11 +8,17 @@ import { ParticleField } from './components/ParticleField';
 import { CartDrawer } from './components/CartDrawer';
 import { AuthModal } from './components/AuthModal';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { HomePage } from './pages/HomePage';
+import { CheckoutPage } from './pages/CheckoutPage';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminOverview } from './pages/admin/AdminOverview';
 import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminOrders } from './pages/admin/AdminOrders';
+import { AdminCustomers } from './pages/admin/AdminCustomers';
+import { AdminAnalytics } from './pages/admin/AdminAnalytics';
+import { AdminCategories } from './pages/admin/AdminCategories';
+import { AdminSettings } from './pages/admin/AdminSettings';
 import { QuickViewModal } from './components/QuickViewModal';
 import { SearchOverlay } from './components/SearchOverlay';
 import { WishlistOverlay } from './components/WishlistOverlay';
@@ -20,7 +26,20 @@ import { Chatbot } from './components/Chatbot';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toaster } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { siteConfig } from './config';
+
+const AdminLoader = () => (
+  <div className="flex flex-col items-center justify-center min-h-screen bg-[#0B0B0D] gap-6">
+    <div className="relative">
+      <Loader2 className="w-12 h-12 animate-spin text-[#D4A24F] opacity-20" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-2 h-2 bg-[#D4A24F] rounded-full animate-pulse" />
+      </div>
+    </div>
+    <p className="text-[#D4A24F]/40 text-[10px] uppercase font-bold tracking-[0.4em] animate-pulse">Initializing Secure Admin Protocol...</p>
+  </div>
+);
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, useGSAP);
 
@@ -75,6 +94,8 @@ function AppContent() {
         .filter(p => p >= 0 && p <= 1)
         .sort((a, b) => a - b);
 
+      /* 
+      // Disabling global snapping to resolve "auto-scrolling" issues
       if (uniquePoints.length > 1) {
         snapTrigger = ScrollTrigger.create({
           snap: {
@@ -85,6 +106,7 @@ function AppContent() {
           },
         });
       }
+      */
     };
 
     // Use a single delayed execution
@@ -157,6 +179,7 @@ function AppContent() {
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           
           {/* Admin Routes with Basic Protection */}
           {isAuthenticated && user?.role === 'admin' ? (
@@ -164,6 +187,10 @@ function AppContent() {
               <Route index element={<AdminOverview />} />
               <Route path="products" element={<AdminProducts />} />
               <Route path="orders" element={<AdminOrders />} />
+              <Route path="customers" element={<AdminCustomers />} />
+              <Route path="categories" element={<AdminCategories />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="settings" element={<AdminSettings />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
           ) : (

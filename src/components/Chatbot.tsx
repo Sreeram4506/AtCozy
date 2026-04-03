@@ -179,9 +179,9 @@ export function Chatbot() {
         <div className="absolute inset-0 bg-[#D4A24F]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
       </button>
 
-      {/* Floating Badge (Only when closed) */}
+      {/* Floating Badge (Only when closed) - Hidden on mobile for better space management */}
       {!isOpen && (
-        <div className="absolute top-0 right-full mr-4 translate-y-4 animate-pulse-glow">
+        <div className="hidden sm:block absolute top-[10px] right-full mr-4 animate-pulse-glow">
           <div className="bg-white text-black px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-xl">
              Ask Concierge
           </div>

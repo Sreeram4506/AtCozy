@@ -6,6 +6,7 @@ import { shopConfig, collectionConfig } from '../config';
 import { useCartStore } from '../store/cartStore';
 import { useUIStore } from '../store/uiStore';
 import { api } from '../lib/api';
+import { useSearchParams } from 'react-router-dom';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -18,6 +19,20 @@ export function AllProducts() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filter, setFilter] = useState('All');
   const [products, setProducts] = useState<any[]>([]);
+  const [searchParams] = useSearchParams();
+
+  // Apply category filter from URL query param (e.g. /?category=Shirts)
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) {
+      setFilter(categoryParam);
+      // Scroll to the products section after a short delay for paint
+      setTimeout(() => {
+        const el = document.getElementById('all-products');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 400);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -26,7 +41,15 @@ export function AllProducts() {
         const productsList = data.products || (Array.isArray(data) ? data : []);
         
         if (productsList.length > 0) {
-          setProducts(productsList.map((p: any) => ({ ...p, source: 'Collection' })));
+          // Fix backend image URLs — /uploads/... need the server base URL
+          const withImageUrls = productsList.map((p: any) => ({
+            ...p,
+            source: 'Collection',
+            image: p.image?.startsWith('/uploads/')
+              ? `http://localhost:5000${p.image}`
+              : p.image,
+          }));
+          setProducts(withImageUrls);
         } else {
           // Fallback to config if API fails or is empty
           const fallback = [
@@ -67,20 +90,22 @@ export function AllProducts() {
 
     const ctx = gsap.context(() => {
       // Title reveal
-      gsap.fromTo(
-        titleRef.current,
-        { y: 50, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 1.2,
-          ease: 'power4.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
+      if (titleRef.current) {
+        gsap.fromTo(
+          titleRef.current,
+          { y: 50, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 1.2,
+            ease: 'power4.out',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top 80%',
+            }
           }
-        }
-      );
+        );
+      }
 
       // Staggered grid reveal
       const cards = gridRef.current?.children;
@@ -113,6 +138,7 @@ export function AllProducts() {
       name: product.name,
       price: product.price,
       image: product.image,
+      category: product.category,
     });
   };
 

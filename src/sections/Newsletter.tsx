@@ -3,6 +3,8 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 import { newsletterConfig } from '../config';
+import { api } from '../lib/api';
+import { toast } from 'sonner';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -11,6 +13,7 @@ export function Newsletter() {
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
@@ -54,12 +57,21 @@ export function Newsletter() {
     );
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+    if (!email) return;
+
+    setIsLoading(true);
+    try {
+      await api.newsletter.subscribe(email);
       setIsSubmitted(true);
       setEmail('');
-      setTimeout(() => setIsSubmitted(false), 3000);
+      toast.success('Joined the AtCozy inner circle.');
+      setTimeout(() => setIsSubmitted(false), 5000);
+    } catch (err: any) {
+      toast.error(err.message || 'Subscription failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -96,9 +108,10 @@ export function Newsletter() {
                   />
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-[#0B0B0D] text-white rounded-lg hover:bg-[#D4A24F] hover:text-black transition-colors flex items-center gap-2"
+                    disabled={isLoading}
+                    className="px-6 py-3 bg-[#0B0B0D] text-white rounded-lg hover:bg-[#D4A24F] hover:text-black transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {newsletterConfig.buttonText}
+                    {isLoading ? 'Joining...' : newsletterConfig.buttonText}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>

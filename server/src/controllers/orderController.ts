@@ -24,8 +24,8 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       totalPrice,
       shippingAddress,
       paymentMethod: paymentMethod || 'card',
-      paymentStatus: 'paid', // Simulated payment
-      status: 'confirmed',
+      paymentStatus: 'pending', // Wait for Stripe confirmation
+      status: 'pending',        // Wait for Stripe confirmation
     });
 
     await newOrder.save();

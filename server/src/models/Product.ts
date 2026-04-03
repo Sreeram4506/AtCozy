@@ -60,7 +60,9 @@ const ProductSchema: Schema = new Schema({
   timestamps: true,
 });
 
-// Text search index
+// Text search index - Required for $text queries
 ProductSchema.index({ name: 'text', description: 'text', tags: 'text' });
 
-export default mongoose.model<IProduct>('Product', ProductSchema);
+// Safer model export for ESM/Hot-reloading
+const Product = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
+export default Product;

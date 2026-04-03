@@ -1,0 +1,13 @@
+node_modules
+dist
+.env
+
+# Logs
+error.log
+npm-debug.log*
+
+# Test files
+src/test-mongo.ts
+src/test_flow.ts
+verify-count.ts
+verify-output.txt

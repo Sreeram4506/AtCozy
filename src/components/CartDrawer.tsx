@@ -4,13 +4,14 @@ import { X, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
-import { api } from '../lib/api';
+import { useNavigate } from 'react-router-dom';
 
 export function CartDrawer() {
-  const { items, isOpen, setCartOpen, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCartStore();
+  const { items, isOpen, setCartOpen, removeFromCart, updateQuantity, getTotalPrice } = useCartStore();
   const drawerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isOpen) {
@@ -51,32 +52,15 @@ export function CartDrawer() {
 
   const { isAuthenticated, openAuthModal } = useAuth();
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!isAuthenticated) {
       setCartOpen(false);
       openAuthModal('login');
       return;
     }
 
-    try {
-      const orderData = {
-        items: items.map(item => ({
-          productId: item.id,
-          quantity: item.quantity,
-          price: item.price
-        })),
-        totalPrice: getTotalPrice()
-      };
-
-      await api.orders.create(orderData);
-      
-      clearCart();
-      setCartOpen(false);
-      toast.success('Order placed successfully! Thank you for shopping with AtCozy.');
-    } catch (err: any) {
-      console.error('Checkout error:', err);
-      toast.error(err.message || 'Checkout failed. Please try again.');
-    }
+    setCartOpen(false);
+    navigate('/checkout');
   };
 
   if (!isOpen && items.length === 0) return null;

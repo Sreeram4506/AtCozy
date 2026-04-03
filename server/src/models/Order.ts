@@ -6,6 +6,7 @@ export interface IOrderItem {
   image: string;
   quantity: number;
   price: number;
+  category: string;
   size?: string;
   color?: string;
 }
@@ -51,6 +52,7 @@ const OrderSchema: Schema = new Schema({
     image: { type: String },
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true },
+    category: { type: String, required: true, default: 'Product' },
     size: { type: String },
     color: { type: String },
   }],

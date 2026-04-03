@@ -48,6 +48,7 @@ export function QuickViewModal() {
       name: selectedProduct.name,
       price: selectedProduct.price,
       image: selectedProduct.image,
+      category: selectedProduct.category,
       size: selectedSize,
     });
     closeQuickView();

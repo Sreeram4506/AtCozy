@@ -1,69 +1,75 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 
 // GET /api/products - Get all products with filtering, sorting, pagination
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const {
-      category,
+    const { 
+      page = 1, 
+      limit = 12, 
+      category, 
+      sort, 
+      minPrice, 
+      maxPrice, 
       search,
-      minPrice,
-      maxPrice,
-      sort,
-      page = '1',
-      limit = '50',
-      featured,
-      available,
+      onSale 
     } = req.query;
 
-    const filter: any = {};
-
+    const query: any = {};
+    
+    // Filter by category
     if (category && category !== 'all') {
-      filter.category = { $regex: new RegExp(category as string, 'i') };
+      query.category = category;
     }
 
-    if (search) {
-      filter.$text = { $search: search as string };
-    }
-
+    // Filter by Price range
     if (minPrice || maxPrice) {
-      filter.price = {};
-      if (minPrice) filter.price.$gte = Number(minPrice);
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
     }
 
-    if (featured === 'true') filter.featured = true;
-    if (available === 'true') filter.available = true;
-
-    let sortOption: any = { id: 1 };
-    switch (sort) {
-      case 'price-asc': sortOption = { price: 1 }; break;
-      case 'price-desc': sortOption = { price: -1 }; break;
-      case 'name-asc': sortOption = { name: 1 }; break;
-      case 'name-desc': sortOption = { name: -1 }; break;
-      case 'newest': sortOption = { createdAt: -1 }; break;
-      default: sortOption = { id: 1 };
+    // Filter by onSale
+    if (onSale === 'true') {
+      query.discountPrice = { $exists: true, $ne: null };
     }
 
-    const pageNum = Math.max(1, parseInt(page as string));
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string)));
+    // Search query
+    if (search) {
+      query.$text = { $search: search as string };
+    }
+
+    const sortOptions: any = {};
+    if (sort === 'price-low') sortOptions.price = 1;
+    else if (sort === 'price-high') sortOptions.price = -1;
+    else if (sort === 'newest') sortOptions.createdAt = -1;
+    else sortOptions.createdAt = -1;
+
+    console.log('Fetching products with query:', JSON.stringify(query));
+    
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
     const skip = (pageNum - 1) * limitNum;
 
+    // Check database connection
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error(`Database connection not ready. State: ${mongoose.connection.readyState}`);
+    }
+
     const [products, total] = await Promise.all([
-      Product.find(filter).sort(sortOption).skip(skip).limit(limitNum),
-      Product.countDocuments(filter),
+      Product.find(query).sort(sortOptions).skip(skip).limit(limitNum),
+      Product.countDocuments(query),
     ]);
 
     res.json({
       products,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum),
-      },
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
     });
   } catch (err: any) {
+    console.error('CRITICAL ERROR in getProducts:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -75,6 +81,7 @@ export const getProductById = async (req: Request, res: Response) => {
     if (!product) return res.status(404).json({ message: 'Product not found' });
     res.json(product);
   } catch (err: any) {
+    console.error('Error in getProductById:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -89,6 +96,7 @@ export const getCategories = async (_req: Request, res: Response) => {
     ]);
     res.json({ categories, categoryCounts });
   } catch (err: any) {
+    console.error('Error in getCategories:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -120,6 +128,7 @@ export const getFeaturedProducts = async (_req: Request, res: Response) => {
     const products = await Product.find({ featured: true, available: true }).limit(16);
     res.json(products);
   } catch (err: any) {
+    console.error('Error in getFeaturedProducts:', err);
     res.status(500).json({ error: err.message });
   }
 };

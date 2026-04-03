@@ -137,6 +137,7 @@ export function WishlistOverlay() {
                             name: product.name,
                             price: product.price,
                             image: product.image,
+                            category: product.category,
                           });
                         }}
                         className="flex items-center gap-2 text-xs text-white bg-white/10 px-4 py-2 rounded-lg hover:bg-[#D4A24F] hover:text-black transition-all"
